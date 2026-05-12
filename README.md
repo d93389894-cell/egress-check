@@ -5,7 +5,7 @@
 ## 一键使用
 
 ```bash
-sudo bash <(curl -fsSL https://raw.githubusercontent.com/d93389894-cell/egress-check/main/egress-check.sh)
+curl -fsSL https://raw.githubusercontent.com/d93389894-cell/egress-check/main/egress-check.sh | bash
 ```
 
 ## 检测分类
