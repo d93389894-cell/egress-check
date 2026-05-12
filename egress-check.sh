@@ -8,6 +8,21 @@ TMP_STAT=$(mktemp); TMP_ALL=$(mktemp)
 trap 'rm -f "$TMP_STAT" "$TMP_ALL"; tput cnorm 2>/dev/null; echo ""' EXIT
 tput civis 2>/dev/null || true
 
+# ─── Argument parsing ─────────────────────────────────────────────────────────
+IP_VER=4          # default IPv4
+IP_FLAG="-4"
+for arg in "$@"; do
+    case "$arg" in
+        -6|--ipv6) IP_VER=6; IP_FLAG="-6" ;;
+        -4|--ipv4) IP_VER=4; IP_FLAG="-4" ;;
+        -h|--help)
+            printf "Usage: %s [-4|--ipv4] [-6|--ipv6]\n" "$0"
+            printf "  -4, --ipv4   Force IPv4 traces (default)\n"
+            printf "  -6, --ipv6   Force IPv6 traces\n"
+            exit 0 ;;
+    esac
+done
+
 # ─── ANSI palette ─────────────────────────────────────────────────────────────
 R=$'\e[0m'
 BOLD=$'\e[1m'; DIM=$'\e[2m'
@@ -186,9 +201,10 @@ check() {
     local output="" first_public=""
 
     if command -v mtr &>/dev/null; then
-        output=$(mtr -r -n -c 1 --max-ttl 15 "$domain" 2>/dev/null || true)
-    else
-        output=$(traceroute -n -m 15 -w 2 -q 1 "$domain" 2>/dev/null || true)
+        output=$(mtr "$IP_FLAG" -r -n -c 1 --max-ttl 15 "$domain" 2>/dev/null || mtr -r -n -c 1 --max-ttl 15 "$domain" 2>/dev/null || true)
+    fi
+    if [[ -z "$output" ]] && command -v traceroute &>/dev/null; then
+        output=$(traceroute "$IP_FLAG" -n -m 15 -w 2 -q 1 "$domain" 2>/dev/null || traceroute -n -m 15 -w 2 -q 1 "$domain" 2>/dev/null || true)
     fi
 
     local ips
@@ -333,7 +349,7 @@ clear
 printf '\n'
 double_rule
 center_line "$(gradient_line "  E G R E S S   I S P  /  A S N   C H E C K E R  ")"
-center_line "${K}Route tracing  ·  ISP lookup  ·  Visual analytics${R}"
+center_line "${K}Route tracing  ·  ISP lookup  ·  Visual analytics  ·  IPv${IP_VER}${R}"
 center_line "${K}$(date '+%Y-%m-%d  %H:%M:%S  %Z')${R}"
 double_rule
 printf '\n'
